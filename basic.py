@@ -130,6 +130,7 @@ class Lexer:
 		self.pos.advance(self.current_char)
 		self.current_char = self.text[self.pos.idx] if self.pos.idx < len(self.text) else None
 
+	# TODO - Token assignee to use LLM rather than manually
 	def make_tokens(self):
 		tokens = []
 
