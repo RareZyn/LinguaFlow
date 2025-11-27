@@ -120,19 +120,6 @@ The LLM understands many synonyms:
 
 ---
 
-## Testing
-
-### Manual Testing
-Just run `python main.py` and try different inputs!
-
-### Automated Testing
-```bash
-python test_patterns.py
-```
-
-This runs a comprehensive test suite for all 4 grammar patterns.
-
----
 
 ## Understanding Output
 
@@ -235,21 +222,3 @@ Goodbye!
 5. **Educational**: Shows compiler pipeline stages (Lexer → Parser → Interpreter)
 6. **Compiler Principles**: Follows academic compiler design patterns
 
----
-
-## Next Steps
-
-- Try all 4 input formats
-- Experiment with different operation words (accumulate, aggregate, etc.)
-- Check out `GRAMMAR_DESIGN.md` for detailed grammar specification
-- Read `ARCHITECTURE_COMPARISON.md` to understand the design philosophy
-- See `RESTRUCTURE_SUMMARY.md` for implementation details
-
----
-
-## Need Help?
-
-- Type `help` in the interpreter for detailed rules
-- Check `help_rules.py` for the help system implementation
-- Read `CLAUDE.md` for full project documentation
-- See `grammar.txt` for formal grammar specification
