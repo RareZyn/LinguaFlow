@@ -15,6 +15,8 @@ DIGITS = '0123456789'
 #######################################
 
 class Error:
+	#Stores position range (pos_start, pos_end)
+  #as_string(): Formats error with position indicator using arrows
 	def __init__(self, pos_start, pos_end, error_name, details):
 		self.pos_start = pos_start
 		self.pos_end = pos_end
@@ -28,14 +30,17 @@ class Error:
 		return result
 
 class IllegalCharError(Error):
+	#IllegalCharError - Unknown character like @ or $
 	def __init__(self, pos_start, pos_end, details):
 		super().__init__(pos_start, pos_end, 'Illegal Character', details)
 
 class InvalidSyntaxError(Error):
+	#InvalidSyntaxError - Grammar violations like 5 + + 3
 	def __init__(self, pos_start, pos_end, details=''):
 		super().__init__(pos_start, pos_end, 'Invalid Syntax', details)
 
 class RTError(Error):
+	#Runtime errors like division by zero
 	def __init__(self, pos_start, pos_end, details, context):
 		super().__init__(pos_start, pos_end, 'Runtime Error', details)
 		self.context = context
@@ -60,17 +65,21 @@ class RTError(Error):
 
 #######################################
 # POSITION
+# Tracks exact location in source code
 #######################################
 
 class Position:
 	def __init__(self, idx, ln, col, fn, ftxt):
-		self.idx = idx
-		self.ln = ln
-		self.col = col
-		self.fn = fn
-		self.ftxt = ftxt
+		self.idx = idx #character index in the text
+		self.ln = ln #line number
+		self.col = col #column number
+		self.fn = fn #filename
+		self.ftxt = ftxt #full text of the file
 
-	def advance(self, current_char=None):
+	def advance(self, current_char=None): #(current_char)
+	# -	Moves to the next character
+  # - Increments index and column
+  # - If it encounters \n, increments line number and resets column to 0
 		self.idx += 1
 		self.col += 1
 
@@ -119,6 +128,7 @@ class Token:
 #######################################
 
 class Lexer:
+	#Purpose: Converts raw text into a stream of tokens
 	def __init__(self, fn, text):
 		self.fn = fn
 		self.text = text
@@ -135,9 +145,9 @@ class Lexer:
 		tokens = []
 
 		while self.current_char != None:
-			if self.current_char in ' \t':
+			if self.current_char in ' \t': # Skip whitespace
 				self.advance()
-			elif self.current_char in DIGITS:
+			elif self.current_char in DIGITS: # Start of number
 				tokens.append(self.make_number())
 			elif self.current_char == '+':
 				tokens.append(Token(TT_PLUS, pos_start=self.pos))
@@ -160,7 +170,7 @@ class Lexer:
 			else:
 				pos_start = self.pos.copy()
 				char = self.current_char
-				self.advance()
+				self.advance() # ... similar for -, *, /, (, )
 				return [], IllegalCharError(pos_start, self.pos, "'" + char + "'")
 
 		tokens.append(Token(TT_EOF, pos_start=self.pos))
@@ -190,6 +200,8 @@ class Lexer:
 #######################################
 
 class NumberNode:
+	# - Leaf node containing a single number token
+  # - Example: 5 becomes NumberNode(Token(INT, 5))
 	def __init__(self, tok):
 		self.tok = tok
 
@@ -200,6 +212,8 @@ class NumberNode:
 		return f'{self.tok}'
 
 class BinOpNode:
+	#   - Binary operation with left operand, operator, right operand
+  # - Example: 5 + 3 becomes BinOpNode(NumberNode(5), Token(PLUS),NumberNode(3))
 	def __init__(self, left_node, op_tok, right_node):
 		self.left_node = left_node
 		self.op_tok = op_tok
@@ -212,6 +226,8 @@ class BinOpNode:
 		return f'({self.left_node}, {self.op_tok}, {self.right_node})'
 
 class UnaryOpNode:
+	# - Unary operation (like negation)
+  # - Example: -5 becomes UnaryOpNode(Token(MINUS), NumberNode(5))
 	def __init__(self, op_tok, node):
 		self.op_tok = op_tok
 		self.node = node
@@ -227,11 +243,13 @@ class UnaryOpNode:
 #######################################
 
 class ParseResult:
+	#Wrapper for parser results to track errors
 	def __init__(self):
 		self.error = None
 		self.node = None
 
 	def register(self, res):
+		#If the result has an error, propagate it upward
 		if isinstance(res, ParseResult):
 			if res.error: self.error = res.error
 			return res.node
@@ -239,10 +257,12 @@ class ParseResult:
 		return res
 
 	def success(self, node):
+		#Mark parsing succeeded, return the AST node
 		self.node = node
 		return self
 
 	def failure(self, error):
+		#Mark parsing failed, store the error
 		self.error = error
 		return self
 
@@ -466,7 +486,7 @@ class Interpreter:
 def run(fn, text):
 	# Generate tokens
 	lexer = Lexer(fn, text)
-	tokens, error = lexer.make_tokens()
+	tokens, error = lexer.make_tokens() # Main entry point
 	if error: return None, error
 	
 	# Generate AST

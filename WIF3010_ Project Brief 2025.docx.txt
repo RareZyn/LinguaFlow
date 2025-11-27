@@ -1,0 +1,227 @@
+﻿WIF3010 : Project Brief 2025
+DESIGN AND IMPLEMENTATION OF AN LLM-ASSISTED NATURAL LANGUAGE PROGRAMMING LANGUAGE (NLPL)
+________________
+Project Overview
+Students will work in teams (≈ 5 members) to design, implement, and evaluate a mini programming language that accepts natural-language commands (in English, Malay, or bilingual form).
+The language must have its own grammar and semantics, but can integrate a Large Language Model (LLM) — such as ChatGPT, Gemini, or OpenAI API — to assist when the grammar cannot directly interpret a command.
+The LLM serves only as a semantic helper (to resolve synonyms or ambiguous verbs).
+Execution, control structures, and correctness verification must be performed by the students’ own designed interpreter or parser.
+1. Core Requirements
+Every project must include:
+1. Grammar Definition (BNF or EBNF) — formalize sentence structure.
+2. Parser/Interpreter Implementation — handle basic constructs such as assignment, arithmetic, and conditionals.
+3. Semantic Mapping — define meaning of verbs and nouns in a symbolic table.
+4. LLM Integration Layer — handle ambiguous inputs via API or simulated prompt.
+5. Execution Engine — perform the requested task and display results.
+6. Proof of Correctness — verify at least one feature using axiomatic or denotational semantics.
+7. Paradigm Extension — add one advanced concept (e.g., OOP, concurrency, exception handling, functional, or logic features).
+8. Evaluation & Reflection — analyze ambiguity rate, accuracy, LLM dependency, and student insight.
+3. Expected Learning Outcomes
+By the end of this project, students will be able to:
+1. Apply context-free grammar and semantics principles to design a new programming language.
+2. Implement lexical and syntax analysis using recursive-descent or ANTLR.
+3. Integrate LLM assistance for semantic interpretation in a controlled, explainable way.
+4. Analyze binding, scope, data types, and subprogram structures within their language.
+5. Demonstrate proof of correctness using denotational or axiomatic semantics.
+6. Extend their base interpreter into a chosen paradigm (OOP, concurrency, exception, functional, or logic).
+7. Present and document their design using design thinking methodology.
+
+4. Project Schedule and Deliverables in 7 weeks
+Deliverables are due at the end of the week. If presentation is scheduled, the deliverables can be presented in the tutorial session
+Week
+	Focus / Activity
+	Expected Outcome / Deliverable
+*Create a folder for your group in TEAMS and upload ALL deliverables in this folder
+	Week 5 – Initiation
+	• Team formation (≈ 5 members)
+• Choose project title from the 7 recommended NLPL topics.
+• Study BNF/EBNF basics and LLM prompt behavior.
+• Draft project proposal (problem statement, objective, chosen paradigm).
+• Sign the Group Contract
+	Deliverable 1: 
+1-page proposal including: problem statement, motivation, chosen paradigm (e.g., concurrency, exception).
+2- Group Contract
+	Week 8 – Grammar and Semantics Design
+	• Define syntax in BNF/EBNF.
+• Write initial semantic mapping (verb → operation).
+• Show sample parse tree for one example command.
+• Discuss how LLM will be used to resolve ambiguity.
+	Deliverable 2: Presentation 1 — Language grammar, example parse tree, and high-level architecture.
+	Week 8– Core Interpreter Implementation
+	• Build lexical analyzer and parser (recursive-descent, ANTLR, or regex).
+• Implement arithmetic expressions, assignment, and conditional statements.
+• Demonstrate simple execution (without LLM yet).
+	Deliverable 3: Working prototype running basic structured commands (e.g., “sum these numbers”, “if x > 5 then print x”).
+	Week 10 – Integrating the LLM Layer
+	• Connect the interpreter with an LLM API or simulated prompt.
+• Test natural synonyms and ambiguous input handling.
+• Design fallback mechanism when LLM fails.
+	Deliverable 4: Functional hybrid interpreter with LLM support and internal grammar verification.
+	Week 10 – Paradigm Extension (10–14)
+	• Add one advanced feature:
+ – OOP → object/class syntax
+ – Concurrency → parallel commands
+ – Exception → try–catch semantics
+ – Functional → map/reduce or recursion
+ – Logic → fact/rule/query structures
+• Integrate feature into interpreter.
+	Deliverable 5: Presentation 2 — Demonstration of extended paradigm and sample run.
+	Week 12 – Testing and Proof of Correctness
+	• Design test cases for all features.
+• Prove correctness of at least one feature using denotational or axiomatic semantics (e.g., loop or arithmetic correctness).
+• Analyze ambiguity handling.
+	Deliverable 6: Prototype video + short write-up showing test results and semantic proof.
+	Week 12 – Final Presentation  
+
+
+
+
+	• Present final system with live demo.
+
+
+	Deliverable 7: Presentation + Poster (A3 Size)
+	Week 14
+Report
+	• Submit comprehensive report and reflection.
+	Final Report 
+	
+
+5. Report Format (Design Thinking Framework)
+Section
+	Description
+	1. Empathize
+	Define the motivation and domain where natural language programming is needed.
+	2. Define
+	Specify the core features and paradigm selected.
+	3. Ideate
+	Describe grammar, semantics, and design process. Include diagrams and syntax tree.
+	4. Prototype
+	Explain implementation: lexer, parser, LLM integration, and interpreter structure.
+	5. Test
+	Present test cases, semantic proof, and ambiguity analysis.
+	6. Reflection
+	Discuss limitations, ethical considerations, and future improvement.
+	7. Reference
+	References must follow APA style
+	Final Note
+	All figures and tables must be labeled and described in the text
+	
+
+ 6. Suggested Tools and Technologies
+Purpose
+	Recommended Tools
+	Grammar & Parsing
+	ANTLR 4, PLY (Python Lex-Yacc), JavaCC, or recursive-descent parser (Python/C/Java)
+	Interpreter / Runtime
+	Python, Java, or C++ (simple command execution layer)
+	LLM Integration
+	OpenAI API (GPT-4 mini / GPT-4 Turbo), Gemini 1.5 Pro, or Hugging Face Transformers (offline mode)
+	Evaluation & Visualization
+	Jupyter Notebook or web interface (Flask/Streamlit) to display input, parse tree, and output
+	Documentation & Collaboration
+	GitHub, Google Colab, Overleaf, Miro, Notion
+	
+
+7. Suggested References and Resources
+Texts
+   1. Sebesta, R.W. (2023). Concepts of Programming Languages (12th Ed.). Pearson.
+   2. Aho, A.V., Lam, M.S., Sethi, R., Ullman, J.D. (2007). Compilers: Principles, Techniques, and Tools. Addison Wesley.
+   3. Mitchell, J.C. (2002). Foundations for Programming Languages. MIT Press.
+Winskel, G. (1993). The Formal Semantics of Programming Languages. MIT Press.
+Online
+      * ANTLR 4 Documentation: https://github.com/antlr/antlr4
+      * OpenAI API Docs: https://platform.openai.com/docs
+      * Neso Academy — Program Proof and Hoare Logic YouTube
+      * freeCodeCamp — Building Interpreters and Parsers YouTube
+
+ 8. Assessment Rubric (Total = 100 Marks)
+Criteria
+	Description
+	Marks
+	1. Proposal and Grammar Design
+	Clarity of problem, originality, and correctness of BNF/EBNF grammar; link to semantics.
+	15 
+	2. Parser and Interpreter Implementation
+	Proper functioning of lexical/syntax analysis, execution of structured commands.
+	20 
+	3. LLM Integration and Semantic Resolution
+	Creativity and control in using the LLM to handle ambiguity without losing explainability.
+	15 
+	4. Paradigm Extension (Topics 10–14)
+	Successful and meaningful implementation of chosen paradigm (e.g., concurrency, OO).
+	10 
+	5. Proof of Correctness
+	Demonstration of denotational/axiomatic semantics, correctness reasoning.
+	10 
+	6. Testing and Evaluation
+	Comprehensive test cases, ambiguity analysis, LLM dependency ratio.
+	10 
+	7. Presentation (1, 2 & Final)
+	Clarity, demonstration quality, visual aids, and teamwork.
+	10 
+	8. Final Report (Design Thinking Format)
+	Completeness, reflection, coherence, documentation quality.
+	10 
+	
+
+9. Grading Notes
+         * Bonus (up to +5 marks): projects that show explainability visualization (parse tree + LLM reasoning trace).
+         * Penalty (−5 marks): if LLM is used as a black box for code generation without grammar verification.
+10.  Teamwork and Individual Roles
+To ensure fairness and balanced contribution, the following rules apply:
+         * Each team member must contribute technically — examples include grammar design, semantic modeling, coding, LLM integration, or testing.
+         * Tasks limited to non-technical roles (e.g., writing reports, preparing slides, scheduling meetings) are not sufficient on their own.
+         * Teams must define clear roles and responsibilities, such as:
+         * Project Coordinator
+         * Language Architect
+         * Programmer / Integrator
+         * Semantics & Proof Specialist
+         * Evaluation & Documentation Lead
+
+            * All members must understand the entire system, even if they focus on specific parts.
+            * Presentations and reports must state each member’s role and technical contribution clearly.
+            * Marks may be adjusted if there is evidence of uneven participation or dominance by one individual.
+            * Balanced collaboration, shared decision-making, and joint accountability are part of the overall assessment.
+            * During the Q&A, each member should be able to explain and demonstrate the portion they developed or analyzed.
+FINAL NOTE:
+CHOOSE AND WRITE YOUR PROJECT TITLE IN THE EXCEL SHEET UNDER THE PROJECT TAB. TITLE ARE CHOSEN  BASED ON FIRST COME AND FIRST SERVE BASIS. MAKE SURE YOU WRITE THE TIME AND DATE OF YOU CHOOSING THE TITLE. Titles are in the next page.
+2. Brief Title Description
+Each team must choose one of the following seven project titles (or propose a closely related variant with lecturer approval). All projects require students to design a mini programming language based on natural-language commands that uses a Large Language Model (LLM) only to assist with ambiguous or unfamiliar expressions.
+The system must include a formal grammar, defined semantics, and an execution or verification mechanism developed by the students themselves.
+Each language should support approximately 5–10 functional commands (e.g., sort, display, compute, store, loop, filter, explain), with clearly defined grammar rules and expected outputs.
+Every project covers the core language design topics (1–9) and extends into one advanced paradigm (10–14) such as object-oriented, concurrent, functional, logic, or exception-handling features.
+Students must demonstrate how their grammar and interpreter work together with the LLM to correctly understand, execute, or verify commands, supported by testing and proof of correctness.
+
+
+No.
+	Project Title
+	Description
+	Paradigm Extension
+	1
+	LinguaFlow: A Natural Command Interpreter with Grammar + LLM Synergy
+	Students design a controlled natural-language interpreter where the grammar handles most commands (e.g., “sum these numbers”), but the LLM resolves unfamiliar verbs (“accumulate”, “aggregate”). The interpreter executes verified results.
+	12 – Exception Handling (handle misunderstood commands gracefully)
+	2
+	HybridMind: Grammar-Driven, LLM-Assisted Language Processor
+	Build a two-tier parser: formal grammar for structured commands and LLM fallback for ambiguous cases. Compare performance and correctness.
+	11 – Concurrency (parallel command execution, e.g., “sort while printing progress”)
+	3
+	SpeakMath: Natural Expressions into Verified Computations
+	Create a math-focused natural mini-language (“find the mean of these values”) where LLM suggests operator meanings and grammar verifies expressions before evaluation.
+	13 – Functional Programming (map/reduce, composition via natural syntax)
+	4
+	LexiBot: Domain-Specific Natural Language for Educational Tasks
+	Design a small language for teachers to write classroom instructions (“show total marks of all students”) interpreted into database or array operations. The LLM expands vocabulary (e.g., “score”, “grade”, “result”).
+	10 – OO (object representations of students, classes)
+	5
+	SafeTalk: Transparent and Explainable Natural Command Execution
+	Focus on explainability: after executing a task, the system explains why it interpreted each word as a specific operation. The LLM provides human-readable justifications.
+	12 – Exception Handling (trace & explanation of parsing failures)
+	6
+	PolyCode: Multilingual Natural Programming Language
+	Students design a cross-language parser that can understand Malay, English, or mixed commands (“susun nombor ini menaik”). The LLM aids translation and synonym detection.
+	14 – Logic Programming (define multilingual facts/rules)
+	7
+	NL-Verify: Proof-Oriented Natural Language Programming System
+	Users write specifications in natural language (“after this loop, total must equal sum of inputs”), and the system generates formal assertions and verifies them.
+	12 – Verification and Exception Recovery
