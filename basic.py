@@ -3,6 +3,7 @@
 #######################################
 
 from strings_with_arrows import *
+from verbose_output import VerboseInterpreterMixin, print_verbose_execution
 
 #######################################
 # CONSTANTS
@@ -427,7 +428,7 @@ class Context:
 # INTERPRETER
 #######################################
 
-class Interpreter:
+class Interpreter(VerboseInterpreterMixin):
 	def visit(self, node, context):
 		method_name = f'visit_{type(node).__name__}'
 		method = getattr(self, method_name, self.no_visit_method)
@@ -439,17 +440,35 @@ class Interpreter:
 	###################################
 
 	def visit_NumberNode(self, node, context):
+		self.print_step(f"Visit NumberNode: {node.tok.value}")
 		return RTResult().success(
 			Number(node.tok.value).set_context(context).set_pos(node.pos_start, node.pos_end)
 		)
 
 	def visit_BinOpNode(self, node, context):
 		res = RTResult()
+
+		# Get operation name and symbol
+		op_name, op_symbol = self.get_operation_info(node.op_tok.type)
+
+		self.print_step(f"{op_name} operation ({op_symbol}):")
+
+		# Visit left node
+		self.indent_level += 1
+		self.print_step("Evaluate left operand:")
+		self.indent_level += 1
 		left = res.register(self.visit(node.left_node, context))
 		if res.error: return res
+		self.indent_level -= 1
+
+		# Visit right node
+		self.print_step("Evaluate right operand:")
+		self.indent_level += 1
 		right = res.register(self.visit(node.right_node, context))
 		if res.error: return res
+		self.indent_level -= 1
 
+		# Perform operation
 		if node.op_tok.type == TT_PLUS:
 			result, error = left.added_to(right)
 		elif node.op_tok.type == TT_MINUS:
@@ -462,10 +481,16 @@ class Interpreter:
 		if error:
 			return res.failure(error)
 		else:
+			self.print_step(f"Result: {left.value} {op_symbol} {right.value} = {result.value}")
+			self.indent_level -= 1
 			return res.success(result.set_pos(node.pos_start, node.pos_end))
 
 	def visit_UnaryOpNode(self, node, context):
 		res = RTResult()
+
+		self.print_step(f"Unary operation ({node.op_tok.type}):")
+		self.indent_level += 1
+
 		number = res.register(self.visit(node.node, context))
 		if res.error: return res
 
@@ -473,6 +498,9 @@ class Interpreter:
 
 		if node.op_tok.type == TT_MINUS:
 			number, error = number.multed_by(Number(-1))
+			self.print_step(f"Negate: -{number.value}")
+
+		self.indent_level -= 1
 
 		if error:
 			return res.failure(error)
@@ -486,17 +514,30 @@ class Interpreter:
 def run(fn, text):
 	# Generate tokens
 	lexer = Lexer(fn, text)
-	tokens, error = lexer.make_tokens() # Main entry point
+	tokens, error = lexer.make_tokens()
 	if error: return None, error
-	
+
 	# Generate AST
 	parser = Parser(tokens)
 	ast = parser.parse()
 	if ast.error: return None, ast.error
 
+	# Print verbose output for stages 1 and 2
+	print_verbose_execution(fn, text, tokens, ast.node, None, None)
+
 	# Run program
 	interpreter = Interpreter()
 	context = Context('<program>')
+	interpreter.indent_level = 1  # Initialize indentation for verbose output
 	result = interpreter.visit(ast.node, context)
+
+	# Print final result
+	print("\n4. RESULT:")
+	print("-" * 40)
+	if result.error:
+		print(f"   Error: {result.error}")
+	else:
+		print(f"   {result.value}")
+	print("="*60 + "\n")
 
 	return result.value, result.error
