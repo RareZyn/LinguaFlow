@@ -4,12 +4,17 @@
 
 from strings_with_arrows import *
 from verbose_output import VerboseInterpreterMixin, print_verbose_execution
+from gemini_controller import get_gemini_controller
 
 #######################################
 # CONSTANTS
 #######################################
 
 DIGITS = '0123456789'
+LETTERS = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
+
+# Structural keywords that are part of grammar patterns
+KEYWORDS = {'of', 'and', 'these', 'numbers'}
 
 #######################################
 # ERRORS
@@ -105,6 +110,12 @@ TT_MUL      = 'MUL'
 TT_DIV      = 'DIV'
 TT_LPAREN   = 'LPAREN'
 TT_RPAREN   = 'RPAREN'
+TT_WORD_OP  = 'WORD_OP'      # Potential operation word: 'add', 'sum', etc.
+TT_KEYWORD  = 'KEYWORD'      # Structural keywords: 'of', 'and', 'these', 'numbers'
+TT_LBRACKET = 'LBRACKET'     # [
+TT_RBRACKET = 'RBRACKET'     # ]
+TT_COMMA    = 'COMMA'        # ,
+TT_COLON    = 'COLON'        # :
 TT_EOF			= 'EOF'
 
 class Token:
@@ -129,20 +140,30 @@ class Token:
 #######################################
 
 class Lexer:
-	#Purpose: Converts raw text into a stream of tokens
+	"""
+	Converts raw text into a stream of tokens.
+	Now supports both symbolic operators (+, -, *, /) and worded operations (add, sum, etc.)
+	"""
 	def __init__(self, fn, text):
 		self.fn = fn
 		self.text = text
 		self.pos = Position(-1, 0, -1, fn, text)
 		self.current_char = None
 		self.advance()
-	
+
 	def advance(self):
 		self.pos.advance(self.current_char)
 		self.current_char = self.text[self.pos.idx] if self.pos.idx < len(self.text) else None
 
-	# TODO - Token assignee to use LLM rather than manually
 	def make_tokens(self):
+		"""
+		Tokenize input supporting:
+		- Numbers (INT, FLOAT)
+		- Symbolic operators (+, -, *, /, (, ))
+		- Worded operators (add, sum, multiply, etc.) -> TT_WORD_OP
+		- Keywords (of, and, these, numbers) -> TT_KEYWORD
+		- Punctuation ([, ], :, ,)
+		"""
 		tokens = []
 
 		while self.current_char != None:
@@ -150,6 +171,8 @@ class Lexer:
 				self.advance()
 			elif self.current_char in DIGITS: # Start of number
 				tokens.append(self.make_number())
+			elif self.current_char in LETTERS: # Start of word
+				tokens.append(self.make_word())
 			elif self.current_char == '+':
 				tokens.append(Token(TT_PLUS, pos_start=self.pos))
 				self.advance()
@@ -168,16 +191,29 @@ class Lexer:
 			elif self.current_char == ')':
 				tokens.append(Token(TT_RPAREN, pos_start=self.pos))
 				self.advance()
+			elif self.current_char == '[':
+				tokens.append(Token(TT_LBRACKET, pos_start=self.pos))
+				self.advance()
+			elif self.current_char == ']':
+				tokens.append(Token(TT_RBRACKET, pos_start=self.pos))
+				self.advance()
+			elif self.current_char == ',':
+				tokens.append(Token(TT_COMMA, pos_start=self.pos))
+				self.advance()
+			elif self.current_char == ':':
+				tokens.append(Token(TT_COLON, pos_start=self.pos))
+				self.advance()
 			else:
 				pos_start = self.pos.copy()
 				char = self.current_char
-				self.advance() # ... similar for -, *, /, (, )
+				self.advance()
 				return [], IllegalCharError(pos_start, self.pos, "'" + char + "'")
 
 		tokens.append(Token(TT_EOF, pos_start=self.pos))
 		return tokens, None
 
 	def make_number(self):
+		"""Extract integer or float from input"""
 		num_str = ''
 		dot_count = 0
 		pos_start = self.pos.copy()
@@ -195,6 +231,28 @@ class Lexer:
 			return Token(TT_INT, int(num_str), pos_start, self.pos)
 		else:
 			return Token(TT_FLOAT, float(num_str), pos_start, self.pos)
+
+	def make_word(self):
+		"""
+		Extract a word and classify it as either:
+		- TT_KEYWORD: Known structural keyword ('of', 'and', 'these', 'numbers')
+		- TT_WORD_OP: Potential operation word (needs LLM validation in parser)
+		"""
+		word_str = ''
+		pos_start = self.pos.copy()
+
+		while self.current_char != None and self.current_char in LETTERS:
+			word_str += self.current_char
+			self.advance()
+
+		word_lower = word_str.lower()
+
+		# Check if it's a known keyword
+		if word_lower in KEYWORDS:
+			return Token(TT_KEYWORD, word_lower, pos_start, self.pos)
+		else:
+			# Unknown word - could be an operation word (add, sum, multiply, etc.)
+			return Token(TT_WORD_OP, word_lower, pos_start, self.pos)
 
 #######################################
 # NODES
@@ -239,6 +297,21 @@ class UnaryOpNode:
 	def __repr__(self):
 		return f'({self.op_tok}, {self.node})'
 
+class ListOpNode:
+	"""
+	List operation node for Rule 3: "sum these numbers: [5, 3, 7]"
+	Applies operation to all numbers in list left-to-right
+	"""
+	def __init__(self, op_tok, number_nodes):
+		self.op_tok = op_tok  # The resolved operation token (PLUS, MINUS, MUL, DIV)
+		self.number_nodes = number_nodes  # List of NumberNode objects
+
+		self.pos_start = self.op_tok.pos_start
+		self.pos_end = number_nodes[-1].pos_end if number_nodes else op_tok.pos_end
+
+	def __repr__(self):
+		return f'ListOp({self.op_tok}, {self.number_nodes})'
+
 #######################################
 # PARSE RESULT
 #######################################
@@ -272,12 +345,22 @@ class ParseResult:
 #######################################
 
 class Parser:
-	def __init__(self, tokens):
+	"""
+	Parser with grammar-first approach + LLM semantic resolution.
+
+	Supports 4 grammar patterns:
+	1. Symbolic: 5 + 3
+	2. Infix worded: 5 add 3
+	3. Functional: sum these numbers: [5, 3, 7]
+	4. Natural phrasing: sum of 5 and 3
+	"""
+	def __init__(self, tokens, use_llm=True):
 		self.tokens = tokens
 		self.tok_idx = -1
+		self.use_llm = use_llm
 		self.advance()
 
-	def advance(self, ):
+	def advance(self):
 		self.tok_idx += 1
 		if self.tok_idx < len(self.tokens):
 			self.current_tok = self.tokens[self.tok_idx]
@@ -288,11 +371,100 @@ class Parser:
 		if not res.error and self.current_tok.type != TT_EOF:
 			return res.failure(InvalidSyntaxError(
 				self.current_tok.pos_start, self.current_tok.pos_end,
-				"Expected '+', '-', '*' or '/'"
+				"Unexpected token"
 			))
 		return res
 
+	def resolve_word_op(self, word_tok):
+		"""
+		Use LLM to resolve a WORD_OP token to an operator token.
+		Returns (resolved_token, error)
+		"""
+		if not self.use_llm:
+			return None, f"Cannot resolve operation word '{word_tok.value}' without LLM"
+
+		try:
+			gemini = get_gemini_controller()
+			symbol, error = gemini.resolve_operation_word(word_tok.value)
+
+			if error:
+				return None, error
+
+			# Map symbol to token type
+			symbol_to_type = {
+				'+': TT_PLUS,
+				'-': TT_MINUS,
+				'*': TT_MUL,
+				'/': TT_DIV
+			}
+
+			if symbol not in symbol_to_type:
+				return None, f"Invalid symbol '{symbol}' returned by LLM"
+
+			# Create resolved token
+			resolved_tok = Token(
+				symbol_to_type[symbol],
+				symbol,
+				word_tok.pos_start,
+				word_tok.pos_end
+			)
+
+			# Display LLM resolution to user
+			print(f"\n[LLM Resolution] '{word_tok.value}' → '{symbol}'")
+
+			return resolved_tok, None
+
+		except ValueError as e:
+			return None, f"LLM not available: {str(e)}"
+		except Exception as e:
+			return None, f"LLM error: {str(e)}"
+
 	###################################
+	# Grammar Pattern Recognition
+	###################################
+
+	def expr(self):
+		"""
+		Top-level expression parser.
+		Tries to match natural language patterns first, falls back to symbolic.
+		"""
+		res = ParseResult()
+
+		# Try Rule 3: Functional form "sum these numbers: [5, 3, 7]"
+		if self.current_tok.type == TT_WORD_OP:
+			# Peek ahead to determine which rule
+			if self.peek() and self.peek().type == TT_KEYWORD and self.peek().value == 'these':
+				return self.functional_expr()
+			# Try Rule 4: Natural phrasing "sum of 5 and 3"
+			elif self.peek() and self.peek().type == TT_KEYWORD and self.peek().value == 'of':
+				return self.natural_phrasing_expr()
+
+		# Try Rule 2: Infix worded "5 add 3" (starts with number)
+		if self.current_tok.type in (TT_INT, TT_FLOAT):
+			# Peek ahead for WORD_OP
+			if self.peek() and self.peek().type == TT_WORD_OP:
+				return self.infix_worded_expr()
+
+		# Default: Rule 1 - Symbolic expression (existing grammar)
+		return self.symbolic_expr()
+
+	def peek(self, offset=1):
+		"""Look ahead at token without advancing"""
+		peek_idx = self.tok_idx + offset
+		if peek_idx < len(self.tokens):
+			return self.tokens[peek_idx]
+		return None
+
+	###################################
+	# Rule 1: Symbolic Expression (Original)
+	###################################
+
+	def symbolic_expr(self):
+		"""Standard arithmetic: 5 + 3 * 2"""
+		return self.bin_op(self.term, (TT_PLUS, TT_MINUS))
+
+	def term(self):
+		return self.bin_op(self.factor, (TT_MUL, TT_DIV))
 
 	def factor(self):
 		res = ParseResult()
@@ -303,7 +475,7 @@ class Parser:
 			factor = res.register(self.factor())
 			if res.error: return res
 			return res.success(UnaryOpNode(tok, factor))
-		
+
 		elif tok.type in (TT_INT, TT_FLOAT):
 			res.register(self.advance())
 			return res.success(NumberNode(tok))
@@ -326,14 +498,6 @@ class Parser:
 			"Expected int or float"
 		))
 
-	def term(self):
-		return self.bin_op(self.factor, (TT_MUL, TT_DIV))
-
-	def expr(self):
-		return self.bin_op(self.term, (TT_PLUS, TT_MINUS))
-
-	###################################
-
 	def bin_op(self, func, ops):
 		res = ParseResult()
 		left = res.register(func())
@@ -347,6 +511,195 @@ class Parser:
 			left = BinOpNode(left, op_tok, right)
 
 		return res.success(left)
+
+	###################################
+	# Rule 2: Infix Worded Operator
+	###################################
+
+	def infix_worded_expr(self):
+		"""Pattern: {number} WORD_OP {number}
+		Example: 5 add 3"""
+		res = ParseResult()
+
+		# Get left number
+		if self.current_tok.type not in (TT_INT, TT_FLOAT):
+			return res.failure(InvalidSyntaxError(
+				self.current_tok.pos_start, self.current_tok.pos_end,
+				"Expected number"
+			))
+		left_node = NumberNode(self.current_tok)
+		res.register(self.advance())
+
+		# Get operation word
+		if self.current_tok.type != TT_WORD_OP:
+			return res.failure(InvalidSyntaxError(
+				self.current_tok.pos_start, self.current_tok.pos_end,
+				"Expected operation word"
+			))
+
+		word_tok = self.current_tok
+		resolved_op, error = self.resolve_word_op(word_tok)
+		if error:
+			return res.failure(InvalidSyntaxError(
+				word_tok.pos_start, word_tok.pos_end,
+				error
+			))
+		res.register(self.advance())
+
+		# Get right number
+		if self.current_tok.type not in (TT_INT, TT_FLOAT):
+			return res.failure(InvalidSyntaxError(
+				self.current_tok.pos_start, self.current_tok.pos_end,
+				"Expected number after operation word"
+			))
+		right_node = NumberNode(self.current_tok)
+		res.register(self.advance())
+
+		return res.success(BinOpNode(left_node, resolved_op, right_node))
+
+	###################################
+	# Rule 3: Functional Form
+	###################################
+
+	def functional_expr(self):
+		"""Pattern: WORD_OP these numbers : [ number, number, ... ]
+		Example: sum these numbers: [5, 3, 7]"""
+		res = ParseResult()
+
+		# Get operation word
+		if self.current_tok.type != TT_WORD_OP:
+			return res.failure(InvalidSyntaxError(
+				self.current_tok.pos_start, self.current_tok.pos_end,
+				"Expected operation word"
+			))
+
+		word_tok = self.current_tok
+		resolved_op, error = self.resolve_word_op(word_tok)
+		if error:
+			return res.failure(InvalidSyntaxError(
+				word_tok.pos_start, word_tok.pos_end,
+				error
+			))
+		res.register(self.advance())
+
+		# Expect "these"
+		if self.current_tok.type != TT_KEYWORD or self.current_tok.value != 'these':
+			return res.failure(InvalidSyntaxError(
+				self.current_tok.pos_start, self.current_tok.pos_end,
+				"Expected 'these' after operation word"
+			))
+		res.register(self.advance())
+
+		# Expect "numbers"
+		if self.current_tok.type != TT_KEYWORD or self.current_tok.value != 'numbers':
+			return res.failure(InvalidSyntaxError(
+				self.current_tok.pos_start, self.current_tok.pos_end,
+				"Expected 'numbers' after 'these'"
+			))
+		res.register(self.advance())
+
+		# Expect ":"
+		if self.current_tok.type != TT_COLON:
+			return res.failure(InvalidSyntaxError(
+				self.current_tok.pos_start, self.current_tok.pos_end,
+				"Expected ':' after 'these numbers'"
+			))
+		res.register(self.advance())
+
+		# Expect "["
+		if self.current_tok.type != TT_LBRACKET:
+			return res.failure(InvalidSyntaxError(
+				self.current_tok.pos_start, self.current_tok.pos_end,
+				"Expected '[' to start number list"
+			))
+		res.register(self.advance())
+
+		# Parse number list
+		number_nodes = []
+		while self.current_tok.type in (TT_INT, TT_FLOAT):
+			number_nodes.append(NumberNode(self.current_tok))
+			res.register(self.advance())
+
+			# Optional comma
+			if self.current_tok.type == TT_COMMA:
+				res.register(self.advance())
+
+		if len(number_nodes) == 0:
+			return res.failure(InvalidSyntaxError(
+				self.current_tok.pos_start, self.current_tok.pos_end,
+				"Expected at least one number in list"
+			))
+
+		# Expect "]"
+		if self.current_tok.type != TT_RBRACKET:
+			return res.failure(InvalidSyntaxError(
+				self.current_tok.pos_start, self.current_tok.pos_end,
+				"Expected ']' to close number list"
+			))
+		res.register(self.advance())
+
+		return res.success(ListOpNode(resolved_op, number_nodes))
+
+	###################################
+	# Rule 4: Natural Phrasing
+	###################################
+
+	def natural_phrasing_expr(self):
+		"""Pattern: WORD_OP of {number} and {number}
+		Example: sum of 5 and 3"""
+		res = ParseResult()
+
+		# Get operation word
+		if self.current_tok.type != TT_WORD_OP:
+			return res.failure(InvalidSyntaxError(
+				self.current_tok.pos_start, self.current_tok.pos_end,
+				"Expected operation word"
+			))
+
+		word_tok = self.current_tok
+		resolved_op, error = self.resolve_word_op(word_tok)
+		if error:
+			return res.failure(InvalidSyntaxError(
+				word_tok.pos_start, word_tok.pos_end,
+				error
+			))
+		res.register(self.advance())
+
+		# Expect "of"
+		if self.current_tok.type != TT_KEYWORD or self.current_tok.value != 'of':
+			return res.failure(InvalidSyntaxError(
+				self.current_tok.pos_start, self.current_tok.pos_end,
+				"Expected 'of' after operation word"
+			))
+		res.register(self.advance())
+
+		# Get first number
+		if self.current_tok.type not in (TT_INT, TT_FLOAT):
+			return res.failure(InvalidSyntaxError(
+				self.current_tok.pos_start, self.current_tok.pos_end,
+				"Expected number after 'of'"
+			))
+		left_node = NumberNode(self.current_tok)
+		res.register(self.advance())
+
+		# Expect "and"
+		if self.current_tok.type != TT_KEYWORD or self.current_tok.value != 'and':
+			return res.failure(InvalidSyntaxError(
+				self.current_tok.pos_start, self.current_tok.pos_end,
+				"Expected 'and' after first number"
+			))
+		res.register(self.advance())
+
+		# Get second number
+		if self.current_tok.type not in (TT_INT, TT_FLOAT):
+			return res.failure(InvalidSyntaxError(
+				self.current_tok.pos_start, self.current_tok.pos_end,
+				"Expected number after 'and'"
+			))
+		right_node = NumberNode(self.current_tok)
+		res.register(self.advance())
+
+		return res.success(BinOpNode(left_node, resolved_op, right_node))
 
 #######################################
 # RUNTIME RESULT
@@ -507,18 +860,73 @@ class Interpreter(VerboseInterpreterMixin):
 		else:
 			return res.success(number.set_pos(node.pos_start, node.pos_end))
 
+	def visit_ListOpNode(self, node, context):
+		"""
+		Handle list operations: sum these numbers: [5, 3, 7]
+		Apply operation left-to-right: 5 + 3 + 7
+		"""
+		res = RTResult()
+
+		op_name, op_symbol = self.get_operation_info(node.op_tok.type)
+		self.print_step(f"List {op_name} operation:")
+		self.indent_level += 1
+
+		if len(node.number_nodes) == 0:
+			return res.failure(RTError(
+				node.pos_start, node.pos_end,
+				"Cannot perform operation on empty list",
+				context
+			))
+
+		# Start with first number
+		result = res.register(self.visit(node.number_nodes[0], context))
+		if res.error: return res
+
+		# Apply operation to remaining numbers
+		for i in range(1, len(node.number_nodes)):
+			next_num = res.register(self.visit(node.number_nodes[i], context))
+			if res.error: return res
+
+			# Perform operation
+			if node.op_tok.type == TT_PLUS:
+				result, error = result.added_to(next_num)
+			elif node.op_tok.type == TT_MINUS:
+				result, error = result.subbed_by(next_num)
+			elif node.op_tok.type == TT_MUL:
+				result, error = result.multed_by(next_num)
+			elif node.op_tok.type == TT_DIV:
+				result, error = result.dived_by(next_num)
+
+			if error:
+				return res.failure(error)
+
+		self.print_step(f"Final result: {result.value}")
+		self.indent_level -= 1
+		return res.success(result.set_pos(node.pos_start, node.pos_end))
+
 #######################################
 # RUN
 #######################################
 
-def run(fn, text):
-	# Generate tokens
+def run(fn, text, use_llm=True):
+	"""
+	Execute the interpreter pipeline with grammar-first approach.
+
+	Args:
+		fn: Filename (usually '<stdin>')
+		text: Input text to process
+		use_llm: Whether to use LLM for semantic resolution of operation words (default: True)
+
+	Returns:
+		tuple: (result_value, error)
+	"""
+	# Generate tokens (Lexer now handles word tokenization)
 	lexer = Lexer(fn, text)
 	tokens, error = lexer.make_tokens()
 	if error: return None, error
 
-	# Generate AST
-	parser = Parser(tokens)
+	# Generate AST (Parser handles LLM resolution as needed)
+	parser = Parser(tokens, use_llm=use_llm)
 	ast = parser.parse()
 	if ast.error: return None, ast.error
 

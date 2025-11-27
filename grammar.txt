@@ -1,7 +1,113 @@
-expr    : term ((PLUS|MINUS) term)*
+========================================
+LINGUAFLOW FORMAL GRAMMAR (Extended BNF)
+========================================
 
-term    : factor ((MUL|DIV) factor)*
+Grammar-First Design with LLM Semantic Resolution
+The grammar recognizes structure; LLM resolves operation word semantics only.
 
-factor  : INT|FLOAT
-				: (PLUS|MINUS) factor
-				: LPAREN expr RPAREN
+========================================
+TOP-LEVEL EXPRESSIONS
+========================================
+
+expr            : symbolic_expr
+                | infix_worded_expr
+                | functional_expr
+                | natural_phrasing_expr
+
+========================================
+RULE 1: SYMBOLIC EXPRESSIONS (Original)
+========================================
+
+symbolic_expr   : term ((PLUS|MINUS) term)*
+
+term            : factor ((MUL|DIV) factor)*
+
+factor          : INT
+                | FLOAT
+                | (PLUS|MINUS) factor
+                | LPAREN expr RPAREN
+
+========================================
+RULE 2: INFIX WORDED OPERATOR
+========================================
+Pattern: {number} WORD_OP {number}
+Example: 5 add 3
+
+infix_worded_expr : number WORD_OP number
+
+number          : INT | FLOAT
+
+Note: WORD_OP is resolved to +,-,*,/ by LLM before parsing continues
+
+========================================
+RULE 3: FUNCTIONAL FORM
+========================================
+Pattern: WORD_OP these numbers : [ ... ]
+Example: sum these numbers: [5, 3, 7]
+
+functional_expr : WORD_OP KEYWORD('these') KEYWORD('numbers')
+                  COLON LBRACKET number_list RBRACKET
+
+number_list     : number (COMMA number)*
+
+Note: Operation applies left-to-right: [5,3,7] with + becomes (5+3)+7
+
+========================================
+RULE 4: NATURAL PHRASING
+========================================
+Pattern: WORD_OP of {number} and {number}
+Example: sum of 5 and 3
+
+natural_phrasing_expr : WORD_OP KEYWORD('of') number KEYWORD('and') number
+
+========================================
+TOKEN TYPES
+========================================
+
+Numbers:
+  INT           : [0-9]+
+  FLOAT         : [0-9]+\.[0-9]+
+
+Symbolic Operators:
+  PLUS          : '+'
+  MINUS         : '-'
+  MUL           : '*'
+  DIV           : '/'
+
+Parentheses:
+  LPAREN        : '('
+  RPAREN        : ')'
+
+Natural Language Tokens:
+  WORD_OP       : [a-zA-Z]+  (potential operation word, requires LLM resolution)
+  KEYWORD       : 'of' | 'and' | 'these' | 'numbers'
+
+List Syntax:
+  LBRACKET      : '['
+  RBRACKET      : ']'
+  COMMA         : ','
+  COLON         : ':'
+
+Special:
+  EOF           : End of input
+
+========================================
+LLM SEMANTIC RESOLUTION
+========================================
+
+When parser encounters WORD_OP token:
+1. Query LLM: "Is '{word}' a synonym for +, -, *, or /?"
+2. LLM responds with single symbol: +, -, *, / or ERROR
+3. Parser replaces WORD_OP with corresponding operator token
+4. Parsing continues with resolved token
+
+Examples:
+  'sum'        -> +
+  'accumulate' -> +
+  'multiply'   -> *
+  'gibberish'  -> ERROR
+
+This follows grammar-first design: structure is recognized by grammar,
+semantics are resolved by LLM only when needed.
+
+========================================

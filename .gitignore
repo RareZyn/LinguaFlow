@@ -1,1 +1,5 @@
 CLAUDE.md
+.env
+__pycache__/
+*.pyc
+WIF3010_ Project Brief 2025.docx.txt
