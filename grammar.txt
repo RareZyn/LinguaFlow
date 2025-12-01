@@ -13,19 +13,23 @@ expr            : symbolic_expr
                 | infix_worded_expr
                 | functional_expr
                 | natural_phrasing_expr
+                | mixed_expr
 
 ========================================
 RULE 1: SYMBOLIC EXPRESSIONS (Original)
 ========================================
 
-symbolic_expr   : term ((PLUS|MINUS) term)*
+symbolic_expr   : term ((PLUS|MINUS|WORD_OP) term)*
 
-term            : factor ((MUL|DIV) factor)*
+term            : factor ((MUL|DIV|WORD_OP) factor)*
 
 factor          : INT
                 | FLOAT
                 | (PLUS|MINUS) factor
                 | LPAREN expr RPAREN
+                | natural_phrasing_expr
+
+Note: WORD_OP tokens are resolved to operators on-the-fly for mixed rule support
 
 ========================================
 RULE 2: INFIX WORDED OPERATOR
@@ -59,6 +63,49 @@ Pattern: WORD_OP of {number} and {number}
 Example: sum of 5 and 3
 
 natural_phrasing_expr : WORD_OP KEYWORD('of') number KEYWORD('and') number
+
+========================================
+RULE 5: MIXED RULES
+========================================
+Pattern: Combine any of Rules 1-4 in a single expression
+
+How it works:
+- Rules 3 (functional) and 4 (natural phrasing) can be used as factors
+- Rule 2 (infix worded) operators can be used anywhere operators are valid
+- Any combination of rules can be chained together
+- No limit on how many rules can be combined
+
+Examples:
+  - 5 + 4 subtract 2                      (Rule 1 + Rule 2)
+  - sum of 5 and 3 - 2                    (Rule 4 + Rule 1)
+  - sum these numbers: [5, 3] * 2         (Rule 3 + Rule 1)
+  - 5 multiply sum of 2 and 3             (Rule 2 + Rule 4)
+  - product of 2 and 3 multiply 4 - 1     (Rule 4 + Rule 2 + Rule 1)
+
+Grammar integration:
+  factor now includes:
+    - natural_phrasing_expr (Rule 4)
+    - functional_expr (Rule 3)
+
+  All operators (symbolic and WORD_OP) are resolved dynamically during parsing
+
+Note: This is achieved by composability - Rules 3 and 4 can appear anywhere
+a factor is expected, and WORD_OPs are resolved on-the-fly
+
+========================================
+RULE 6: NATURAL LANGUAGE CONVERSION
+========================================
+Pattern: calc {natural language sentence}
+Example: calc what is answer of 10 divided by 2
+
+This is handled at the REPL level:
+1. User enters: "calc what is 10 divided by 2"
+2. Extract sentence after "calc" prefix
+3. LLM converts entire sentence to symbolic: "10 / 2"
+4. Parser processes symbolic expression normally
+
+This is different from operation word resolution - the LLM converts
+the ENTIRE sentence, not just individual words.
 
 ========================================
 TOKEN TYPES
@@ -106,6 +153,12 @@ Examples:
   'accumulate' -> +
   'multiply'   -> *
   'gibberish'  -> ERROR
+
+TYPO DETECTION:
+The LLM can detect and correct typos in operation words:
+  'sam'        -> + (corrected from 'sum')
+  'multipy'    -> * (corrected from 'multiply')
+  'asdfas'     -> ERROR (complete gibberish)
 
 This follows grammar-first design: structure is recognized by grammar,
 semantics are resolved by LLM only when needed.

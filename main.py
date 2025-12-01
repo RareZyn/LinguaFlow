@@ -1,6 +1,7 @@
 import basic
 from dotenv import load_dotenv
 from help_rules import print_help, print_rules_summary
+from gemini_controller import get_gemini_controller
 
 # Load environment variables from .env file
 load_dotenv()
@@ -24,6 +25,23 @@ while True:
         continue
     elif text == '':
         continue
+
+    # Handle "calc" prefix for natural language to symbolic conversion
+    if text.lower().startswith('calc '):
+        natural_query = text[5:].strip()  # Remove "calc " prefix
+        try:
+            gemini = get_gemini_controller()
+            symbolic_expr, error = gemini.convert_natural_to_symbolic(natural_query)
+
+            if error:
+                print(f"Error: {error}")
+                continue
+
+            print(f"\n[Natural Language Conversion] '{natural_query}' → '{symbolic_expr}'")
+            text = symbolic_expr  # Replace with symbolic expression
+        except Exception as e:
+            print(f"Error converting natural language: {str(e)}")
+            continue
 
     # Run interpreter
     result, error = basic.run('<stdin>', text)

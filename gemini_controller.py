@@ -34,13 +34,18 @@ class GeminiController:
         3. If the word is NOT a mathematical operation, respond with: ERROR
         4. Consider synonyms and common variations
         5. Be case-insensitive
+        6. HANDLE TYPOS: If the word is a close misspelling of a math operation (e.g., "sam" for "sum", "multipy" for "multiply"), respond with the correct symbol
+        7. REJECT GIBBERISH: If the word is complete gibberish with no relation to math operations (e.g., "asdfas", "qwerty"), respond with: ERROR
 
         Examples:
         Input: "sum" → Output: +
+        Input: "sam" (typo of sum) → Output: +
+        Input: "multipy" (typo of multiply) → Output: *
         Input: "accumulate" → Output: +
         Input: "multiply" → Output: *
         Input: "quotient" → Output: /
-        Input: "gibberish" → Output: ERROR
+        Input: "asdfas" (gibberish) → Output: ERROR
+        Input: "qwerty" (gibberish) → Output: ERROR
         Input: "hello" → Output: ERROR
         """
 
@@ -85,6 +90,55 @@ class GeminiController:
             else:
                 # LLM returned unexpected format - treat as error
                 return None, f"Cannot resolve '{word}' to a mathematical operation"
+
+        except exceptions.ResourceExhausted:
+            return None, "LLM quota exceeded. Please try again later."
+        except Exception as e:
+            return None, f"LLM error: {str(e)}"
+
+    def convert_natural_to_symbolic(self, sentence):
+        """
+        Convert a natural language math sentence to symbolic expression.
+        Used for the 'calc' prefix command.
+
+        Args:
+            sentence (str): Natural language math sentence
+
+        Returns:
+            tuple: (symbolic_expression, error)
+
+        Example:
+            >>> convert_natural_to_symbolic("what is answer of 10 divided by 2")
+            ("10 / 2", None)
+        """
+        prompt = f"""
+        Convert the following natural language math question into a simple symbolic expression.
+
+        Input: "{sentence}"
+
+        Rules:
+        1. Extract ONLY the mathematical expression using symbols: +, -, *, /, (, )
+        2. NO text, NO explanations, ONLY the symbolic expression
+        3. Examples:
+           - "what is 5 plus 3" → "5 + 3"
+           - "what is answer of 10 divided by 2" → "10 / 2"
+           - "calculate 5 times 3 minus 2" → "5 * 3 - 2"
+        4. If not a valid math question, respond with: ERROR
+
+        Output only the symbolic expression:
+        """
+
+        try:
+            response = self.model.generate_content(prompt)
+            result = response.text.strip()
+
+            # Remove any quotes that might be in the response
+            result = result.replace('"', '').replace("'", "")
+
+            if result == "ERROR" or result.startswith("ERROR"):
+                return None, "Cannot convert to symbolic expression"
+
+            return result, None
 
         except exceptions.ResourceExhausted:
             return None, "LLM quota exceeded. Please try again later."

@@ -427,6 +427,9 @@ class Parser:
 		"""
 		Top-level expression parser.
 		Tries to match natural language patterns first, falls back to symbolic.
+
+		Rule 2 (infix worded) is now handled by symbolic_expr since WORD_OP
+		tokens are resolved dynamically during parsing, allowing mixed rules.
 		"""
 		res = ParseResult()
 
@@ -439,13 +442,8 @@ class Parser:
 			elif self.peek() and self.peek().type == TT_KEYWORD and self.peek().value == 'of':
 				return self.natural_phrasing_expr()
 
-		# Try Rule 2: Infix worded "5 add 3" (starts with number)
-		if self.current_tok.type in (TT_INT, TT_FLOAT):
-			# Peek ahead for WORD_OP
-			if self.peek() and self.peek().type == TT_WORD_OP:
-				return self.infix_worded_expr()
-
-		# Default: Rule 1 - Symbolic expression (existing grammar)
+		# Rule 1 + Rule 2 (mixed): Symbolic expression with WORD_OP support
+		# This handles: 5 + 3, 5 add 3, 1 total 2 - 3, etc.
 		return self.symbolic_expr()
 
 	def peek(self, offset=1):
@@ -460,13 +458,26 @@ class Parser:
 	###################################
 
 	def symbolic_expr(self):
-		"""Standard arithmetic: 5 + 3 * 2"""
-		return self.bin_op(self.term, (TT_PLUS, TT_MINUS))
+		"""Standard arithmetic: 5 + 3 * 2
+		Supports mixed rules: Any combination of Rules 1-4 can be composed
+		Examples: 5 + 4 subtract 2, sum of 5 and 3 - 2, etc."""
+		return self.bin_op(self.term, (TT_PLUS, TT_MINUS, TT_WORD_OP))
 
 	def term(self):
-		return self.bin_op(self.factor, (TT_MUL, TT_DIV))
+		"""Handles multiplication and division
+		Now supports mixed rules"""
+		return self.bin_op(self.factor, (TT_MUL, TT_DIV, TT_WORD_OP))
 
 	def factor(self):
+		"""
+		Factor can be:
+		- A number
+		- A unary operation
+		- A parenthesized expression
+		- A natural phrasing expression (Rule 4)
+		- A functional form expression (Rule 3)
+		This allows all rules to be composed together
+		"""
 		res = ParseResult()
 		tok = self.current_tok
 
@@ -493,18 +504,45 @@ class Parser:
 					"Expected ')'"
 				))
 
+		# Support Rule 3 and Rule 4 as factors for mixed rule composition
+		elif tok.type == TT_WORD_OP:
+			# Check if it's Rule 3: Functional form "sum these numbers: [...]"
+			if self.peek() and self.peek().type == TT_KEYWORD and self.peek().value == 'these':
+				return self.functional_expr()
+			# Check if it's Rule 4: Natural phrasing "sum of 5 and 3"
+			elif self.peek() and self.peek().type == TT_KEYWORD and self.peek().value == 'of':
+				return self.natural_phrasing_expr()
+			else:
+				return res.failure(InvalidSyntaxError(
+					tok.pos_start, tok.pos_end,
+					"Expected int or float"
+				))
+
 		return res.failure(InvalidSyntaxError(
 			tok.pos_start, tok.pos_end,
 			"Expected int or float"
 		))
 
 	def bin_op(self, func, ops):
+		"""Binary operation handler
+		Now resolves WORD_OP tokens on-the-fly for mixed rules"""
 		res = ParseResult()
 		left = res.register(func())
 		if res.error: return res
 
-		while self.current_tok.type in ops:
+		while self.current_tok.type in ops or (self.current_tok.type == TT_WORD_OP and TT_WORD_OP in ops):
 			op_tok = self.current_tok
+
+			# If it's a WORD_OP, resolve it to a symbol
+			if op_tok.type == TT_WORD_OP:
+				resolved_op, error = self.resolve_word_op(op_tok)
+				if error:
+					return res.failure(InvalidSyntaxError(
+						op_tok.pos_start, op_tok.pos_end,
+						error
+					))
+				op_tok = resolved_op
+
 			res.register(self.advance())
 			right = res.register(func())
 			if res.error: return res

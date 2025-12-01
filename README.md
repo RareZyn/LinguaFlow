@@ -1,10 +1,14 @@
-# LinguaFlow - Quick Start Guide
+# LinguaFlow - Natural Command Interpreter
 
 ## What is LinguaFlow?
 
-LinguaFlow is a **grammar-first natural command interpreter** that combines formal grammar with LLM semantic assistance. It allows you to write mathematical expressions in 4 different ways - from traditional symbols to natural language phrases.
+LinguaFlow is a **grammar-first natural command interpreter** that combines formal grammar with LLM semantic assistance. It allows you to write mathematical expressions in 6 different ways - from traditional symbols to natural language phrases.
 
-**Key Feature**: The grammar handles ALL structure. The LLM only helps resolve operation words (is "sum" the same as "+"?).
+**Key Features**:
+- Grammar-first design: The grammar handles ALL structure
+- LLM semantic assistance: Resolves operation words and corrects typos
+- 6 flexible input formats: From symbolic to natural language
+- Mixed rules: Combine different patterns in one expression
 
 ---
 
@@ -88,6 +92,72 @@ Result: 25.0
 calc > difference of 20 and 5
 [LLM Resolution] 'difference' → '-'
 Result: 15
+```
+
+### 5. Mixed Rules
+Combine any of Rules 1-4 freely in one expression:
+```
+calc > 5 + 4 subtract 2
+[LLM Resolution] 'subtract' → '-'
+Result: 7
+
+calc > sum of 5 and 3 - 2
+[LLM Resolution] 'sum' → '+'
+Result: 6
+
+calc > sum these numbers: [5, 3] * 2
+[LLM Resolution] 'sum' → '+'
+Result: 16
+
+calc > 5 multiply sum of 2 and 3
+[LLM Resolution] 'multiply' → '*'
+[LLM Resolution] 'sum' → '+'
+Result: 25
+
+calc > product of 2 and 3 multiply 4 - 1
+[LLM Resolution] 'product' → '*'
+[LLM Resolution] 'multiply' → '*'
+Result: 23
+```
+
+You can chain as many rules as you want!
+
+### 6. Natural Language Conversion
+Use the "calc" prefix for complete natural language questions:
+```
+calc > calc what is answer of 10 divided by 2
+[Natural Language Conversion] 'what is answer of 10 divided by 2' → '10 / 2'
+Result: 5.0
+
+calc > calc what is 5 plus 3
+[Natural Language Conversion] 'what is 5 plus 3' → '5 + 3'
+Result: 8
+
+calc > calc calculate 5 times 3 minus 2
+[Natural Language Conversion] 'calculate 5 times 3 minus 2' → '5 * 3 - 2'
+Result: 13
+```
+
+---
+
+## Typo Detection
+
+LinguaFlow automatically detects and corrects typos:
+
+```
+calc > sam of 5 and 3
+[LLM Resolution] 'sam' → '+'
+Result: 8
+
+calc > 5 multipy 3
+[LLM Resolution] 'multipy' → '*'
+Result: 15
+```
+
+But rejects complete gibberish:
+```
+calc > asdfas of 5 and 3
+Error: Unknown operation word: 'asdfas'
 ```
 
 ---
@@ -216,9 +286,19 @@ Goodbye!
 ## What Makes LinguaFlow Special?
 
 1. **Grammar-First Design**: Structure is defined by formal grammar, not AI guesswork
-2. **LLM as Helper**: AI only validates word meanings, doesn't generate code
+2. **LLM as Helper**: AI only validates word meanings, doesn't generate code (except for natural language conversion)
 3. **Explainable**: You see exactly when and how LLM is used
-4. **Flexible**: 4 different ways to express the same operation
+4. **Flexible**: 6 different ways to express the same operation
 5. **Educational**: Shows compiler pipeline stages (Lexer → Parser → Interpreter)
 6. **Compiler Principles**: Follows academic compiler design patterns
+7. **Typo Tolerance**: Automatically corrects common typos while rejecting gibberish
+8. **Mixed Patterns**: Combine different grammar rules freely in one expression
+
+---
+
+## More Information
+
+- **SUMMARY.md**: Complete feature documentation
+- **ARCHITECTURE.md**: How the interpreter works internally
+- **grammar.txt**: Formal grammar specification (Extended BNF)
 
