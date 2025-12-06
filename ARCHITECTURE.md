@@ -102,7 +102,7 @@ Pass to lexer: "10 / 2"
    - Symbols: +, -, *, /, (, ), [, ], :, ,
    - Words: Letters only
 3. Classify words:
-   - Keywords: of, and, these, numbers
+   - Keywords: of, and, these, numbers, try, catch
    - Operation words: Everything else → WORD_OP
 4. Create tokens with position tracking
 5. Return token stream + EOF token
@@ -130,15 +130,19 @@ Tokens: [INT:5, WORD_OP:add, INT:3, EOF]
 
 **Purpose**: Recognize grammar patterns and build Abstract Syntax Tree (AST)
 
-**Location**: `basic.py:347-702`
+**Location**: `basic.py:347-795`
 
 **Key Components**:
 
 #### Pattern Recognition
-The parser tries to match one of 6 grammar patterns:
+The parser tries to match one of 7 grammar patterns:
 
 ```python
 def expr(self):
+    # Check for try-catch exception handling
+    if current token is "try":
+        return try_catch_expr()
+
     # Try Rule 3: Functional form
     if WORD_OP followed by "these":
         return functional_expr()
@@ -203,7 +207,15 @@ natural_phrasing_expr → WORD_OP "of" number "and" number
 - Any combination of Rules 1-4 can be chained together
 - No limit on how many rules can be combined
 
-**Rule 6: Natural Language**
+**Rule 6: Try-Catch Exception Handling**
+```python
+try_catch_expr → "try" expr "catch" expr
+```
+- Language-level exception handling
+- Attempts try expression, falls back to catch on runtime error
+- Examples: `try 10 / 0 catch 999`, `try sum of 5 and 0 catch 0`
+
+**Rule 7: Natural Language**
 - Handled in Stage 0 (preprocessing)
 - Converts to symbolic, then parsed normally
 
@@ -237,6 +249,13 @@ ListOpNode(op_tok, number_nodes)
 - Example: sum[5,3,7] → ListOpNode(Token(PLUS), [NumberNode(5), NumberNode(3), NumberNode(7)])
 ```
 
+**TryCatchNode**:
+```python
+TryCatchNode(try_expr, catch_expr)
+- Exception handling for Rule 6
+- Example: try 10/0 catch 999 → TryCatchNode(BinOp(/, 10, 0), NumberNode(999))
+```
+
 **Example AST**:
 ```
 Input: "5 + 3 * 2"
@@ -255,7 +274,7 @@ AST:
 
 **Purpose**: Traverse AST and execute operations
 
-**Location**: `basic.py:784-905`
+**Location**: `basic.py:870-1031`
 
 **Process**: Visitor pattern traversal
 
@@ -267,6 +286,7 @@ def visit(self, node, context):
            or self.visit_BinOpNode(node, context)
            or self.visit_UnaryOpNode(node, context)
            or self.visit_ListOpNode(node, context)
+           or self.visit_TryCatchNode(node, context)
 ```
 
 #### Visitor Methods
@@ -307,6 +327,17 @@ def visit(self, node, context):
    - Apply operation to accumulator and current number
    - Update accumulator
 3. Return final result
+```
+
+**visit_TryCatchNode**:
+```python
+1. Attempt to evaluate try expression
+2. If try succeeds:
+   - Return try result
+3. If try fails with runtime error:
+   - Evaluate catch expression
+   - Return catch result
+4. Provides language-level exception handling
 ```
 
 #### Runtime Values
@@ -709,7 +740,8 @@ Result: 5.0
 - **Rule 3 (Functional)**: 1 call per expression
 - **Rule 4 (Natural)**: 1 call per expression
 - **Rule 5 (Mixed)**: 1 call per WORD_OP
-- **Rule 6 (Natural Lang)**: 1 call per expression
+- **Rule 6 (Try-Catch)**: 0 calls (pure grammar)
+- **Rule 7 (Natural Lang)**: 1 call per expression
 
 ### Memory Usage
 
@@ -726,8 +758,8 @@ LinguaFlow/
 ├── main.py                    # REPL entry point, Stage 0 preprocessing
 ├── basic.py                   # Core interpreter (Stages 1-3)
 │   ├── Lexer                 # Lines 142-256
-│   ├── Parser                # Lines 347-702
-│   └── Interpreter           # Lines 784-905
+│   ├── Parser                # Lines 347-795
+│   └── Interpreter           # Lines 870-1031
 ├── gemini_controller.py       # LLM interface
 ├── help_rules.py              # Help system
 ├── grammar.txt                # Formal grammar specification

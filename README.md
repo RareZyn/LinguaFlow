@@ -2,13 +2,14 @@
 
 ## What is LinguaFlow?
 
-LinguaFlow is a **grammar-first natural command interpreter** that combines formal grammar with LLM semantic assistance. It allows you to write mathematical expressions in 6 different ways - from traditional symbols to natural language phrases.
+LinguaFlow is a **grammar-first natural command interpreter** that combines formal grammar with LLM semantic assistance. It allows you to write mathematical expressions in 7 different ways - from traditional symbols to natural language phrases, with built-in exception handling.
 
 **Key Features**:
 - Grammar-first design: The grammar handles ALL structure
 - LLM semantic assistance: Resolves operation words and corrects typos
-- 6 flexible input formats: From symbolic to natural language
+- 7 flexible input formats: From symbolic to natural language
 - Mixed rules: Combine different patterns in one expression
+- Try-catch exception handling: Language-level error recovery
 
 ---
 
@@ -122,7 +123,28 @@ Result: 23
 
 You can chain as many rules as you want!
 
-### 6. Natural Language Conversion
+### 6. Try-Catch Exception Handling
+Handle runtime errors gracefully with try-catch blocks:
+```
+calc > try 10 / 0 catch 999
+Result: 999
+
+calc > try 5 add 3 catch 0
+[LLM Resolution] 'add' → '+'
+Result: 8
+
+calc > try 10 divide 0 catch 100
+[LLM Resolution] 'divide' → '/'
+Result: 100
+
+calc > try sum these numbers: [10, 0] catch product of 2 and 5
+[LLM Resolution] 'sum' → '+'
+Result: 10
+```
+
+Try-catch expressions evaluate the try block first. If it succeeds, the result is returned. If a runtime error occurs (like division by zero), the catch block is evaluated instead.
+
+### 7. Natural Language Conversion
 Use the "calc" prefix for complete natural language questions:
 ```
 calc > calc what is answer of 10 divided by 2
