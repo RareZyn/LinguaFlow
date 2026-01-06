@@ -1,0 +1,26 @@
+Background Study
+
+Many science and engineering students learn programming (C/C++/Java) but see compilers/interpreters as a “black box.”
+
+They focus on syntax, with limited understanding of tokenization, parsing, semantic analysis, or execution.
+
+LinguaFlow introduces these hidden processes using simple arithmetic-expression examples.
+
+It will shows how natural language becomes tokens → parse tree → interpreted output.
+
+An integrated LLM guides learners by explaining errors and reinforcing understanding of language processing.
+
+Problems
+ seeking to allow end users to use more understandable commands which are using our own language rather than the person need to learn the machine language
+
+ Vast vocabulary and words that are synonymous with each other ; this could easily confuse the machine.
+
+  we  aim to create a resolve for this issue by  creating a  Large  Language Models (LLM)  that will  solve the unfamiliar  and synonymous  verbs
+
+  Objective
+
+  To integrate a Large Language Model (LLM) to semantically resolve unfamiliar or synonymous verbs, mapping them to known command actions.
+
+  To design a grammar-based interpreter calculator that can parse and execute user commands expressed in controlled natural language.
+
+  To ensure safe and verified execution, the interpreter only performs actions that are validated and semantically aligned with user intent. 
