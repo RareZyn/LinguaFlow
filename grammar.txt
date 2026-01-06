@@ -9,6 +9,11 @@ The grammar recognizes structure; LLM resolves operation word semantics only.
 TOP-LEVEL EXPRESSIONS
 ========================================
 
+statement       : var_assign_stmt
+                | func_def_stmt
+                | call_stmt
+                | expr
+
 expr            : symbolic_expr
                 | infix_worded_expr
                 | functional_expr
@@ -108,6 +113,69 @@ This is different from operation word resolution - the LLM converts
 the ENTIRE sentence, not just individual words.
 
 ========================================
+RULE 7: VARIABLES AND FUNCTIONS
+========================================
+
+This rule introduces variable assignment, function definition, and function calls.
+
+--- Variable Assignment ---
+Pattern: create {identifier} as {expression}
+Example: create x as 5
+         create result as sum of 10 and 20
+         create total as 5 + 3 * 2
+
+var_assign_stmt     : KEYWORD('create') IDENTIFIER KEYWORD('as') expr
+
+Note: The expression can be any valid expression (Rules 1-6)
+
+--- Function Definition ---
+Pattern: create {identifier} taking {params} do {body} end
+Example: create double taking x do x * 2 end
+         create add taking a b do a + b end
+         create greet taking do 42 end
+
+func_def_stmt       : KEYWORD('create') IDENTIFIER KEYWORD('taking')
+                      (IDENTIFIER)* KEYWORD('do') statements KEYWORD('end')
+
+Note: Parameters are optional (zero or more identifiers)
+      Body can contain multiple statements
+
+--- Function Call ---
+Pattern: find {function_name} {args}
+Example: find double 5
+         find add 3 7
+         find greet
+
+call_stmt           : KEYWORD('find') IDENTIFIER (factor)*
+
+Note: Arguments are greedy - consumes factors until newline/EOF
+      Arguments can be any factor (numbers, parenthesized expressions, etc.)
+
+--- AST Node Types ---
+VarAssignNode       : Stores variable name and value expression
+VarAccessNode       : Retrieves variable value by name
+FuncDefNode         : Stores function name, parameters, and body
+CallNode            : Stores function reference and argument expressions
+
+--- Execution Semantics ---
+Variable Assignment:
+  1. Evaluate the expression
+  2. Store result in symbol table with given name
+  3. Return the assigned value
+
+Function Definition:
+  1. Create function object with parameters and body
+  2. Store in symbol table with given name
+  3. Return the function object
+
+Function Call:
+  1. Look up function by name in symbol table
+  2. Evaluate all argument expressions
+  3. Bind arguments to parameters in new scope
+  4. Execute function body
+  5. Return result
+
+========================================
 TOKEN TYPES
 ========================================
 
@@ -127,7 +195,8 @@ Parentheses:
 
 Natural Language Tokens:
   WORD_OP       : [a-zA-Z]+  (potential operation word, requires LLM resolution)
-  KEYWORD       : 'of' | 'and' | 'these' | 'numbers'
+  KEYWORD       : 'of' | 'and' | 'these' | 'numbers' | 'create' | 'as' | 'taking' | 'do' | 'end' | 'find'
+  IDENTIFIER    : [a-zA-Z_][a-zA-Z0-9_]*  (variable/function names)
 
 List Syntax:
   LBRACKET      : '['
@@ -136,6 +205,7 @@ List Syntax:
   COLON         : ':'
 
 Special:
+  NEWLINE       : '\n' (statement separator)
   EOF           : End of input
 
 ========================================
