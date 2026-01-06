@@ -531,7 +531,8 @@ class Parser:
         res = ParseResult()
 
         # Check for Natural Language Rules first
-        if self.current_tok.type == TT_WORD_OP:
+        # TT_IDENTIFIER can be an operation word (e.g., "sum") that LLM will resolve
+        if self.current_tok.type in (TT_WORD_OP, TT_IDENTIFIER):
             if self.peek() and self.peek().type == TT_KEYWORD and self.peek().value == 'these':
                 return self.functional_expr()
             elif self.peek() and self.peek().type == TT_KEYWORD and self.peek().value == 'of':
@@ -667,17 +668,25 @@ class Parser:
         res.register(self.advance())
 
         res.register(self.advance()) # of
-        
-        left_node = NumberNode(self.current_tok)
-        if self.current_tok.type not in (TT_INT, TT_FLOAT):
-             return res.failure(InvalidSyntaxError(self.current_tok.pos_start, self.current_tok.pos_end, "Expected number"))
+
+        # Accept number or variable
+        if self.current_tok.type in (TT_INT, TT_FLOAT):
+            left_node = NumberNode(self.current_tok)
+        elif self.current_tok.type == TT_IDENTIFIER:
+            left_node = VarAccessNode(self.current_tok)
+        else:
+            return res.failure(InvalidSyntaxError(self.current_tok.pos_start, self.current_tok.pos_end, "Expected number or variable"))
         res.register(self.advance())
 
         res.register(self.advance()) # and
 
-        right_node = NumberNode(self.current_tok)
-        if self.current_tok.type not in (TT_INT, TT_FLOAT):
-             return res.failure(InvalidSyntaxError(self.current_tok.pos_start, self.current_tok.pos_end, "Expected number"))
+        # Accept number or variable
+        if self.current_tok.type in (TT_INT, TT_FLOAT):
+            right_node = NumberNode(self.current_tok)
+        elif self.current_tok.type == TT_IDENTIFIER:
+            right_node = VarAccessNode(self.current_tok)
+        else:
+            return res.failure(InvalidSyntaxError(self.current_tok.pos_start, self.current_tok.pos_end, "Expected number or variable"))
         res.register(self.advance())
 
         return res.success(BinOpNode(left_node, resolved_op, right_node))
@@ -693,7 +702,7 @@ class Parser:
             symbol_to_type = {'+': TT_PLUS, '-': TT_MINUS, '*': TT_MUL, '/': TT_DIV}
             if symbol not in symbol_to_type: return None, f"Invalid symbol '{symbol}' returned by LLM"
 
-            print(f"\n[LLM Resolution] '{word_tok.value}' → '{symbol}'")
+            print(f"\n[LLM Resolution] '{word_tok.value}' -> '{symbol}'")
             return Token(symbol_to_type[symbol], symbol, word_tok.pos_start, word_tok.pos_end), None
         except Exception as e:
             return None, f"LLM error: {str(e)}"
@@ -1075,8 +1084,8 @@ def run(fn, text, symbol_table):
     ast = parser.parse()
     if ast.error: return None, ast.error
 
-    # Optional: Print verbose output if you want to see the tree
-    # print_verbose_execution(fn, text, tokens, ast.node, None, None)
+    # Print verbose output showing tokens and AST
+    print_verbose_execution(fn, text, tokens, ast.node, None, None)
 
     # 3. Run Interpreter
     interpreter = Interpreter()

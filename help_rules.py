@@ -116,6 +116,8 @@ def print_rules_summary():
 	print("   Examples: 5 + sum of 2 and 3")
 	print("             sum these numbers: [5, 3] * 2")
 	print("6. calc what is 10 divided by 2        (natural language)")
+	print("7. create foo as value")
+	print("Create func taking param1 param2 do ... end")
 	print("\nTypo detection enabled (e.g., 'sam' -> 'sum')")
 	print("Type 'help' for detailed information")
 	print("="*60 + "\n")

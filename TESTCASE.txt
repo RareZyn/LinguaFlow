@@ -1,0 +1,146 @@
+RULE 1: Symbolic Expressions
+
+  5 + 3                     → 8
+  10 - 4                    → 6
+  6 * 7                     → 42
+  15 / 3                    → 5
+  10 / 4                    → 2.5
+  (5 + 3) * 2               → 16
+  ((2 + 3) * (4 - 1))       → 15
+  2 + 3 * 4                 → 14  (precedence: multiply first)
+  10 - 6 / 2                → 7   (precedence: divide first)
+  -5                        → -5  (unary minus)
+  10 + -3                   → 7
+  --5                       → 5   (double negation)
+  3.5 + 2.5                 → 6.0
+  2 + 3 * 4 - 6 / 2         → 11
+
+  ---
+  RULE 2: Infix Worded Expressions
+
+  5 add 3                   → 8
+  10 subtract 4             → 6
+  6 multiply 7              → 42
+  15 divide 3               → 5
+  7 plus 8                  → 15
+  20 minus 5                → 15
+  4 times 5                 → 20
+  10 add 5 subtract 3       → 12  (chained)
+  5.5 add 4.5               → 10.0
+  2 add 3 times 4           → 14  (precedence preserved)
+
+  ---
+  RULE 3: Functional Form (List Operations)
+
+  sum these numbers: [5, 3, 7]           → 15
+  multiply these numbers: [2, 3, 4]      → 24
+  subtract these numbers: [20, 5, 3]     → 12  (left-to-right: 20-5-3)
+  divide these numbers: [100, 5, 2]      → 10  (left-to-right: 100/5/2)
+  sum these numbers: [1.5, 2.5, 3.0]     → 7.0
+  sum these numbers: [42]                → 42  (single element)
+  add these numbers: [10, 20, 30]        → 60
+  product these numbers: [2, 2, 2]       → 8
+  total these numbers: [1, 2, 3, 4]      → 10
+
+  ---
+  RULE 4: Natural Phrasing
+
+  sum of 5 and 3                → 8
+  product of 10 and 2.5         → 25
+  difference of 20 and 5        → 15
+  quotient of 15 and 3          → 5
+  sum of 3.5 and 2.5            → 6.0
+  add of 10 and 5               → 15
+  multiply of 6 and 7           → 42
+
+  ---
+  RULE 5: Mixed Rules (Symbolic + Worded)
+
+  5 + 4 subtract 2              → 7   (Rule 1 + Rule 2)
+  10 * 2 add 5                  → 25  (Rule 1 + Rule 2)
+
+  ---
+  RULE 6: Natural Language Conversion
+
+  calc what is 10 divided by 2        → 5
+  calc what is 5 plus 3               → 8
+  calc calculate 5 times 3            → 15
+
+  ---
+  RULE 7: Variable Assignment
+
+  create x as 5                 → 5
+  x                             → 5
+  create result as 10 + 5       → 15
+  result                        → 15
+  create a as 10
+  create b as 20
+  a + b                         → 30
+  create x as 5
+  create y as 3
+  sum of x and y                → 8
+
+  ---
+  RULE 8: Function Definition & Call
+
+  create double taking x do
+  x * 2
+  end
+  find double 5                 → 10
+
+  create add taking a b do
+  a + b
+  end
+  find add 3 7                  → 10
+
+  create calc taking a b c do
+  a + b * c
+  end
+  find calc 1 2 3               → 7  (1 + 2*3)
+
+  ---
+  ERROR HANDLING
+
+  10 / 0                        → Runtime Error: Division by zero
+  5 @ 3                         → Illegal Character: '@'
+  undefined_var + 5             → Runtime Error: 'undefined_var' is not defined      
+  divide these numbers: [10, 0] → Runtime Error: Division by zero
+
+  ---
+  LLM SYNONYM RESOLUTION
+
+  5 accumulate 3                → 8   (LLM resolves to +)
+  10 combine 5                  → 15  (LLM resolves to +)
+  total these numbers: [1, 2, 3, 4]    → 10
+  aggregate these numbers: [5, 10, 15] → 30
+
+  ---
+  EDGE CASES
+
+  0 + 5                         → 5
+  5 * 0                         → 0
+  -5 + 10                       → 5
+  -5 * -3                       → 15
+  1000000 + 2000000             → 3000000
+  0.001 + 0.002                 → 0.003
+  42                            → 42  (single number)
+  (((1 + 2)))                   → 3   (nested parentheses)
+  1 + 2 + 3 + 4 + 5             → 15
+  10 - 3 + 5 - 2 + 1            → 11
+
+  ---
+  Quick Demo Script
+
+  Copy these one by one for a smooth presentation:
+  5 + 3
+  5 add 3
+  sum these numbers: [1, 2, 3, 4, 5]
+  sum of 10 and 20
+  create x as 100
+  x * 2
+  create double taking n do
+  n * 2
+  end
+  find double 25
+  10 / 0
+  calc what is 50 divided by 5

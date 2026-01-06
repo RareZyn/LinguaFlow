@@ -6,7 +6,7 @@
 
 def format_ast(node):
 	"""Format AST node as a tree graph that grows downward"""
-	from basic import NumberNode, BinOpNode, UnaryOpNode
+	from basic import NumberNode, BinOpNode, UnaryOpNode, ListNode, VarAccessNode, VarAssignNode, ListOpNode
 	from basic import TT_PLUS, TT_MINUS, TT_MUL, TT_DIV
 
 	def get_node_label(node):
@@ -27,8 +27,22 @@ def format_ast(node):
 				TT_PLUS: "+"
 			}.get(node.op_tok.type, node.op_tok.type)
 			return f"Unary({op_symbol})"
+		elif isinstance(node, ListNode):
+			return "Statements"
+		elif isinstance(node, VarAccessNode):
+			return f"Var({node.var_name_tok.value})"
+		elif isinstance(node, VarAssignNode):
+			return f"Assign({node.var_name_tok.value})"
+		elif isinstance(node, ListOpNode):
+			op_symbol = {
+				TT_PLUS: "+",
+				TT_MINUS: "-",
+				TT_MUL: "*",
+				TT_DIV: "/"
+			}.get(node.op_tok.type, node.op_tok.type)
+			return f"ListOp({op_symbol})"
 		else:
-			return str(node)
+			return str(type(node).__name__)
 
 	def get_children(node):
 		"""Get children of a node"""
@@ -36,6 +50,12 @@ def format_ast(node):
 			return [node.left_node, node.right_node]
 		elif isinstance(node, UnaryOpNode):
 			return [node.node]
+		elif isinstance(node, ListNode):
+			return node.element_nodes
+		elif isinstance(node, VarAssignNode):
+			return [node.value_node]
+		elif isinstance(node, ListOpNode):
+			return node.number_nodes
 		else:
 			return []
 
