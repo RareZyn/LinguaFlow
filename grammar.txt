@@ -9,8 +9,7 @@ The grammar recognizes structure; LLM resolves operation word semantics only.
 TOP-LEVEL EXPRESSIONS
 ========================================
 
-expr            : try_catch_expr
-                | symbolic_expr
+expr            : symbolic_expr
                 | infix_worded_expr
                 | functional_expr
                 | natural_phrasing_expr
@@ -94,29 +93,7 @@ Note: This is achieved by composability - Rules 3 and 4 can appear anywhere
 a factor is expected, and WORD_OPs are resolved on-the-fly
 
 ========================================
-RULE 6: TRY-CATCH EXCEPTION HANDLING
-========================================
-Pattern: try {expr} catch {expr}
-Example: try 10 divide 0 catch 999
-
-try_catch_expr  : KEYWORD('try') expr KEYWORD('catch') expr
-
-How it works:
-- Evaluates the try expression first
-- If try expression succeeds, returns its result
-- If try expression raises a runtime error, evaluates catch expression instead
-- Returns the result of whichever expression succeeds
-
-Examples:
-  - try 10 / 0 catch 999                  (Division by zero handled)
-  - try 5 add 3 catch 0                   (No error, returns 8)
-  - try sum these numbers: [10, 0] catch product of 2 and 5
-
-This implements language-level exception handling, allowing users to
-gracefully handle runtime errors like division by zero.
-
-========================================
-RULE 7: NATURAL LANGUAGE CONVERSION
+RULE 6: NATURAL LANGUAGE CONVERSION
 ========================================
 Pattern: calc {natural language sentence}
 Example: calc what is answer of 10 divided by 2
@@ -150,7 +127,7 @@ Parentheses:
 
 Natural Language Tokens:
   WORD_OP       : [a-zA-Z]+  (potential operation word, requires LLM resolution)
-  KEYWORD       : 'of' | 'and' | 'these' | 'numbers' | 'try' | 'catch'
+  KEYWORD       : 'of' | 'and' | 'these' | 'numbers'
 
 List Syntax:
   LBRACKET      : '['

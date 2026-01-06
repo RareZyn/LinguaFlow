@@ -14,7 +14,7 @@ DIGITS = '0123456789'
 LETTERS = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
 
 # Structural keywords that are part of grammar patterns
-KEYWORDS = {'of', 'and', 'these', 'numbers', 'try', 'catch'}
+KEYWORDS = {'of', 'and', 'these', 'numbers'}
 
 #######################################
 # ERRORS
@@ -312,21 +312,6 @@ class ListOpNode:
 	def __repr__(self):
 		return f'ListOp({self.op_tok}, {self.number_nodes})'
 
-class TryCatchNode:
-	"""
-	Try-catch exception handling node: try {expr} catch {expr}
-	Attempts to evaluate try_expr, falls back to catch_expr on error
-	"""
-	def __init__(self, try_expr, catch_expr):
-		self.try_expr = try_expr
-		self.catch_expr = catch_expr
-
-		self.pos_start = try_expr.pos_start
-		self.pos_end = catch_expr.pos_end
-
-	def __repr__(self):
-		return f'TryCatch({self.try_expr}, {self.catch_expr})'
-
 #######################################
 # PARSE RESULT
 #######################################
@@ -447,10 +432,6 @@ class Parser:
 		tokens are resolved dynamically during parsing, allowing mixed rules.
 		"""
 		res = ParseResult()
-
-		# Check for try-catch exception handling
-		if self.current_tok.type == TT_KEYWORD and self.current_tok.value == 'try':
-			return self.try_catch_expr()
 
 		# Try Rule 3: Functional form "sum these numbers: [5, 3, 7]"
 		if self.current_tok.type == TT_WORD_OP:
@@ -757,41 +738,6 @@ class Parser:
 		res.register(self.advance())
 
 		return res.success(BinOpNode(left_node, resolved_op, right_node))
-
-	###################################
-	# Rule 5: Try-Catch Exception Handling
-	###################################
-
-	def try_catch_expr(self):
-		"""Pattern: try {expr} catch {expr}
-		Example: try 10 divide 0 catch 999"""
-		res = ParseResult()
-
-		# Expect "try"
-		if self.current_tok.type != TT_KEYWORD or self.current_tok.value != 'try':
-			return res.failure(InvalidSyntaxError(
-				self.current_tok.pos_start, self.current_tok.pos_end,
-				"Expected 'try'"
-			))
-		res.register(self.advance())
-
-		# Parse try expression (recursive call to handle any valid expression)
-		try_expr = res.register(self.symbolic_expr())
-		if res.error: return res
-
-		# Expect "catch"
-		if self.current_tok.type != TT_KEYWORD or self.current_tok.value != 'catch':
-			return res.failure(InvalidSyntaxError(
-				self.current_tok.pos_start, self.current_tok.pos_end,
-				"Expected 'catch' after try expression"
-			))
-		res.register(self.advance())
-
-		# Parse catch expression
-		catch_expr = res.register(self.symbolic_expr())
-		if res.error: return res
-
-		return res.success(TryCatchNode(try_expr, catch_expr))
 
 #######################################
 # RUNTIME RESULT
