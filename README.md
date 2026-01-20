@@ -96,32 +96,32 @@ Result: 15
 ```
 
 ### 5. Mixed Rules
-Combine any of Rules 1-4 freely in one expression:
+Combine Rules 1 and 2 (symbolic and infix worded operations):
 ```
 calc > 5 + 4 subtract 2
 [LLM Resolution] 'subtract' → '-'
 Result: 7
 
-calc > sum of 5 and 3 - 2
-[LLM Resolution] 'sum' → '+'
-Result: 6
+calc > 10 * 2 add 5
+[LLM Resolution] 'add' → '+'
+Result: 25
 
-calc > sum these numbers: [5, 3] * 2
-[LLM Resolution] 'sum' → '+'
-Result: 16
+calc > 2 add 3 times 4
+[LLM Resolution] 'add' → '+'
+Result: 14
 
 calc > 5 multiply sum of 2 and 3
 [LLM Resolution] 'multiply' → '*'
 [LLM Resolution] 'sum' → '+'
 Result: 25
-
-calc > product of 2 and 3 multiply 4 - 1
-[LLM Resolution] 'product' → '*'
-[LLM Resolution] 'multiply' → '*'
-Result: 23
 ```
 
-You can chain as many rules as you want!
+Note: Rule 4 (natural phrasing) can be used as the right operand in worded operations.
+To use Rules 3 or 4 with other operators, wrap them in parentheses:
+```
+calc > (sum of 5 and 3) - 2
+Result: 6
+```
 
 ### 6. Try-Catch Exception Handling
 Handle runtime errors gracefully with try-catch blocks:

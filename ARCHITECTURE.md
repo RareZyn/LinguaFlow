@@ -200,12 +200,12 @@ natural_phrasing_expr → WORD_OP "of" number "and" number
 ```
 
 **Rule 5: Mixed Rules**
-- Achieved through composability of all rules
-- Rules 3 (functional) and 4 (natural phrasing) can be factors
-- Rule 2 (infix worded) operators work anywhere operators are valid
-- Dynamic resolution during parsing
-- Any combination of Rules 1-4 can be chained together
-- No limit on how many rules can be combined
+- Combines Rules 1 (symbolic) and 2 (infix worded) freely
+- Rule 4 (natural phrasing) can be used as right operand in worded operations
+- Rule 2 WORD_OP tokens are dynamically resolved during parsing
+- Maintains standard operator precedence through call hierarchy
+- Rules 3 and 4 must be wrapped in parentheses to combine with other operators
+- Limited mixing: not all rule combinations are supported
 
 **Rule 6: Try-Catch Exception Handling**
 ```python

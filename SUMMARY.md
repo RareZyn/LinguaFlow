@@ -91,36 +91,36 @@ quotient of 15 and 3    → 5.0
 ---
 
 ### Rule 5: Mixed Rules
-Combine any of Rules 1-4 freely in a single expression.
+Combine Rules 1 and 2 (symbolic and infix worded operations).
 
-**Format**: Mix any combination of symbolic, worded, functional, and natural phrasing
+**Format**: Mix symbolic operators (+, -, *, /) with worded operators (add, subtract, etc.)
 
 **Examples**:
 ```
 5 + 4 subtract 2                        → 7    (Rule 1 + Rule 2)
-sum of 5 and 3 - 2                      → 6    (Rule 4 + Rule 1)
-sum these numbers: [5, 3] * 2           → 16   (Rule 3 + Rule 1)
+10 * 2 add 5                            → 25   (Rule 1 + Rule 2)
+2 add 3 times 4                         → 14   (Rule 2 + Rule 1)
+5 subtract 3 multiply 2                 → 4    (Rule 2 + Rule 1)
 5 multiply sum of 2 and 3               → 25   (Rule 2 + Rule 4)
-sum these numbers: [2, 3] add 10        → 15   (Rule 3 + Rule 2)
-product of 2 and 3 + sum of 1 and 1     → 8    (Rule 4 + Rule 1 + Rule 4)
-(sum these numbers: [1, 2]) * 5         → 15   (Rule 3 + Rule 1)
+(sum of 5 and 3) - 2                    → 6    (Rule 4 in parentheses + Rule 1)
 ```
 
 **How It Works**:
-- Rules 3 (functional) and 4 (natural phrasing) can be used as factors
-- Rule 2 (infix worded) operators work anywhere operators are valid
-- Parser dynamically resolves operation words as encountered
+- Rule 1 (symbolic) and Rule 2 (infix worded) can be freely mixed
+- Rule 4 (natural phrasing) can be used as the right operand in worded operations
+- Parser dynamically resolves WORD_OP tokens as encountered
 - Maintains standard operator precedence
-- Can chain any number of rules together - no limit!
+- Rules 3 and 4 must be wrapped in parentheses to use with other operators
 
-**All Possible Combinations**:
-- Rule 1 + Rule 2: `5 + 4 subtract 2`
-- Rule 1 + Rule 3: `sum these numbers: [5, 3] * 2`
-- Rule 1 + Rule 4: `sum of 5 and 3 - 2`
-- Rule 2 + Rule 3: `sum these numbers: [2, 3] multiply 5`
-- Rule 2 + Rule 4: `5 multiply sum of 2 and 3`
-- Rule 3 + Rule 4: `sum these numbers: [1, sum of 2 and 3]` (in list)
-- Multi-rule: `product of 2 and 3 multiply 4 - 1` (Rule 4 + Rule 2 + Rule 1)
+**Supported Combinations**:
+- Rule 1 + Rule 2: `5 + 4 subtract 2` ✓
+- Rule 2 + Rule 4: `5 multiply sum of 2 and 3` ✓
+- Rule 3/4 with operators: Use parentheses like `(sum of 5 and 3) - 2` ✓
+
+**Limitations**:
+- Rules 3 and 4 cannot be directly followed by operators without parentheses
+- Example: `sum of 5 and 3 - 2` will NOT work (missing parentheses)
+- Example: `sum these numbers: [5, 3] * 2` will NOT work (missing parentheses)
 
 ---
 

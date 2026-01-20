@@ -50,18 +50,17 @@ SUPPORTED GRAMMAR PATTERNS:
       quotient of 15 and 3
 
 5. MIXED RULES
-   Combine any of Rules 1-4 in a single expression
+   Combine Rules 1 and 2 (symbolic and infix worded operations)
    Examples:
       5 + 4 subtract 2                              (Rule 1 + Rule 2)
-      sum of 5 and 3 - 2                            (Rule 4 + Rule 1)
       10 * 2 add 5                                  (Rule 1 + Rule 2)
-      product of 2 and 3 + 4                        (Rule 4 + Rule 1)
-      sum these numbers: [5, 3] * 2                 (Rule 3 + Rule 1)
+      2 add 3 times 4                               (Rule 2 + Rule 1)
+      5 subtract 3 multiply 2                       (Rule 2 + Rule 1)
       5 multiply sum of 2 and 3                     (Rule 2 + Rule 4)
-      sum these numbers: [2, 3] add 10              (Rule 3 + Rule 2)
-      product of 2 and 3 multiply 4 - 1             (Rule 4 + Rule 2 + Rule 1)
 
-   Can chain multiple rules together - no limit on combinations!
+   Note: Rule 4 (natural phrasing) can be used as the right operand
+   in worded operations. Rules 3 and 4 cannot be followed by additional
+   operators outside of parentheses.
 
 6. NATURAL LANGUAGE CONVERSION
    Format: calc {natural language question}
@@ -112,9 +111,9 @@ def print_rules_summary():
 	print("2. {number} OPERATOR_WORD {number}      (infix worded)")
 	print("3. sum these numbers: [5, 3, 7]        (functional)")
 	print("4. sum of 5 and 3                      (natural phrasing)")
-	print("5. Mix any Rules 1-4 freely!           (combined rules)")
-	print("   Examples: 5 + sum of 2 and 3")
-	print("             sum these numbers: [5, 3] * 2")
+	print("5. Mix Rules 1 and 2!                  (combined rules)")
+	print("   Examples: 5 + 4 subtract 2")
+	print("             5 multiply sum of 2 and 3")
 	print("6. calc what is 10 divided by 2        (natural language)")
 	print("7. create foo as value")
 	print("Create func taking param1 param2 do ...")
